@@ -1,0 +1,12 @@
+{
+  "region": {
+    "left": 1229,
+    "top": 275,
+    "width": 309,
+    "height": 156
+  },
+  "target": "恐怖飞朴者",
+  "fuzzy_threshold": 0.8,
+  "min_confidence": 0.25,
+  "scale": 3.0
+}
