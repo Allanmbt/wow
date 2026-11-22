@@ -1,29 +1,37 @@
 {
   "ready_threshold": 0.9,
   "poison_region": {
-    "left": 1418,
-    "top": 834,
-    "width": 48,
-    "height": 46
+    "left": 1420,
+    "top": 838,
+    "width": 42,
+    "height": 43
   },
   "poison_icon_size": 34,
   "seal_region": {
-    "left": 1252,
-    "top": 950,
-    "width": 64,
-    "height": 64
+    "left": 1250,
+    "top": 941,
+    "width": 66,
+    "height": 70
   },
+  "combat_mode": true,
   "cursor_loot": true,
+  "cursor_mining": true,
+  "sanction_region": {
+    "left": 732,
+    "top": 1242,
+    "width": 57,
+    "height": 59
+  },
   "strike_region": {
-    "left": 1195,
-    "top": 945,
-    "width": 59,
-    "height": 63
+    "left": 1191,
+    "top": 948,
+    "width": 61,
+    "height": 62
   },
   "judgment_region": {
-    "left": 1372,
-    "top": 949,
+    "left": 1370,
+    "top": 944,
     "width": 64,
-    "height": 62
+    "height": 65
   }
 }

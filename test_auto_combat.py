@@ -5,34 +5,94 @@ import queue
 import threading
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from auto_combat import (AttackPolicy, CombatPolicy, CombatWorker, Hotkeys, INPUT,
-                         WindowsInput, icon_similarity, classify_icon, classify_attack_icon)
+from auto_combat import (AttackPolicy, CombatPolicy, CombatWorker, Hotkeys, INPUT, LowLevelKeyboardEvent, LowLevelMouseEvent,
+                         WindowsInput, icon_similarity, classify_icon, classify_attack_icon,
+                         validate_skill_regions, CombatApp, _skill_capture_plan)
 
 
-class MouseToggleTests(unittest.TestCase):
-    def setUp(self):
-        self.hotkeys = Hotkeys.__new__(Hotkeys)
-        self.hotkeys.events = queue.Queue()
-        self.hotkeys.mouse_pressed = False
+class HotkeyTests(unittest.TestCase):
+    def test_both_hooks_toggle_only_for_complete_physical_presses(self):
+        hotkeys = Hotkeys.__new__(Hotkeys)
+        hotkeys.events, hotkeys.closing = queue.Queue(), threading.Event()
+        hotkeys.pressed = hotkeys.mouse_pressed = hotkeys.modified = False
+        install = Mock(side_effect=[42, 43])
+        modifiers = set()
 
-    def test_upper_side_button_toggles_once_until_released(self):
-        self.assertTrue(self.hotkeys.handle_mouse(0x020B, 2 << 16))
-        self.assertTrue(self.hotkeys.handle_mouse(0x020B, 2 << 16))
-        self.assertEqual(self.hotkeys.events.qsize(), 1)
-        self.assertEqual(self.hotkeys.events.get_nowait(), ("toggle", None))
-        self.assertTrue(self.hotkeys.handle_mouse(0x020C, 2 << 16))
-        self.assertTrue(self.hotkeys.events.empty())
-        self.hotkeys.handle_mouse(0x020B, 2 << 16)
-        self.assertEqual(self.hotkeys.events.get_nowait(), ("toggle", None))
+        def run_callbacks(*args):
+            keyboard, mouse = (call.args[1] for call in install.call_args_list)
 
-    def test_other_mouse_buttons_pass_through(self):
-        self.assertFalse(self.hotkeys.handle_mouse(0x020B, 1 << 16))
-        self.assertFalse(self.hotkeys.handle_mouse(0x020C, 1 << 16))
-        self.assertFalse(self.hotkeys.handle_mouse(0x0201, 0))
-        self.assertFalse(self.hotkeys.handle_mouse(0x020A, 2 << 16))
-        self.assertTrue(self.hotkeys.events.empty())
+            def dispatch(message, scan=0x44, vk=0x79, flags=0):
+                event = LowLevelKeyboardEvent(virtual_key=vk, scan_code=scan, flags=flags)
+                self.assertEqual(keyboard(0, message, ctypes.addressof(event)), 0)
+
+            dispatch(0x0101)  # 启动时已按住，单独的松开不切换。
+            dispatch(0x0100, scan=0x33, vk=0xBC)
+            dispatch(0x0101, scan=0x33, vk=0xBC)
+            dispatch(0x0100, flags=0x10)
+            dispatch(0x0101, flags=0x10)
+            modifiers.add(0x10)
+            dispatch(0x0100)
+            modifiers.clear()
+            dispatch(0x0101)
+            dispatch(0x0100)
+            dispatch(0x0100, scan=0x2A, vk=0xA0)
+            dispatch(0x0101, scan=0x2A, vk=0xA0)
+            dispatch(0x0101)
+            dispatch(0x0100)
+            dispatch(0x0100)
+            dispatch(0x0101)
+            dispatch(0x0101)
+            dispatch(0x0100)
+            dispatch(0x0101)
+            for message, button, flags in (
+                (0x020C, 2, 0), (0x020B, 1, 0), (0x020C, 1, 0),
+                (0x020B, 2, 1), (0x020C, 2, 1),
+                (0x020B, 2, 0), (0x020B, 2, 0), (0x020C, 2, 0), (0x020C, 2, 0),
+            ):
+                event = LowLevelMouseEvent(mouse_data=button << 16, flags=flags)
+                self.assertEqual(mouse(0, message, ctypes.addressof(event)), 0)
+            return 0
+
+        api = SimpleNamespace(SetWindowsHookExW=install, UnhookWindowsHookEx=Mock(),
+                              CallNextHookEx=Mock(return_value=0), PeekMessageW=Mock(), GetMessageW=run_callbacks,
+                              GetAsyncKeyState=Mock(side_effect=lambda key: 0x8000 if key in modifiers else 0))
+        kernel = SimpleNamespace(GetCurrentThreadId=lambda: 1, GetModuleHandleW=Mock(return_value=3))
+        with patch("auto_combat.ctypes.WinDLL", side_effect=[api, kernel]):
+            hotkeys.run()
+
+        self.assertEqual([call.args[0] for call in install.call_args_list], [13, 14])
+        self.assertEqual([call.args[0] for call in api.UnhookWindowsHookEx.call_args_list], [43, 42])
+        self.assertEqual(api.CallNextHookEx.call_count, 26)
+        self.assertEqual([event for event, _ in hotkeys.events.queue], ["hotkeys", "toggle", "toggle", "toggle"])
+
+
+class CalibrationTests(unittest.TestCase):
+    def test_duplicate_skill_slot_is_rejected_but_neighbors_are_allowed(self):
+        first = dict(left=1195, top=945, width=59, height=63)
+        duplicate = dict(left=1192, top=946, width=59, height=64)
+        with self.assertRaisesRegex(ValueError, "同一格"):
+            validate_skill_regions(dict(seal=duplicate, strike=first))
+        validate_skill_regions(dict(seal=dict(first, left=1252), strike=first))
+
+    def test_duplicate_calibration_does_not_overwrite_template_or_configuration(self):
+        import numpy as np
+        app = CombatApp.__new__(CombatApp)
+        app.selecting = False
+        app.stop, app.log, app.root, app.status, app.persist = Mock(), Mock(), Mock(), Mock(), Mock()
+        app.region = dict(left=1252, top=945, width=59, height=63)
+        app.e_regions = dict(strike=dict(app.region, left=1195), judgment=None)
+        app.calibrate("seal")
+        def select(root, selected, closed, **kwargs):
+            selected(app.e_regions["strike"], np.random.default_rng(1).integers(0, 255, (63, 59, 3), dtype=np.uint8))
+            closed()
+        with patch("auto_combat.select_screen_region", select), patch("pathlib.Path.write_bytes") as write:
+            app.root.after.call_args.args[1]()
+        write.assert_not_called()
+        app.persist.assert_not_called()
+        self.assertEqual(app.region["left"], 1252)
+        self.assertIn("同一格", app.status.set.call_args.args[0])
 
 
 class PolicyTests(unittest.TestCase):
@@ -119,6 +179,18 @@ class PolicyTests(unittest.TestCase):
 
 
 class AttackIconTests(unittest.TestCase):
+    def test_sanction_takes_priority_even_during_e_burst(self):
+        policy = AttackPolicy()
+        policy.observe(0, dict(strike=True, judgment=True, sanction=False))
+        policy.sent(0.2, policy.candidates(0.2))
+        policy.observe(0.24, dict(strike=True, judgment=True, sanction=True))
+        self.assertEqual(policy.candidates(0.40), ("sanction",))
+        policy.sent(0.40, ("sanction",))
+        policy.observe(0.45, dict(strike=False, judgment=True, sanction=False))
+        self.assertEqual(policy.burst_left, 0)
+        self.assertEqual(policy.candidates(0.6), ())
+        self.assertEqual(policy.candidates(2.3), ("judgment",))
+
     def test_both_ready_share_one_e_then_wait_for_each_cooldown(self):
         p = AttackPolicy()
         p.observe(0, dict(strike=True, judgment=True))
@@ -274,6 +346,22 @@ class InputTests(unittest.TestCase):
         self.assertTrue(native.send("E", 123, cancel))
         self.assertEqual(self.packets, [8, 10])
 
+    def test_virtual_key_sends_q_down_and_up_with_requested_hold(self):
+        native = self.native()
+        packets, waits = [], []
+
+        def send(count, pointer, size):
+            key = pointer._obj.data.ki
+            packets.append((key.wVk, key.wScan, key.dwFlags))
+            return 1
+
+        native.api.SendInput = send
+        cancel = threading.Event()
+        cancel.wait = waits.append
+        self.assertTrue(native.send("Q", 123, cancel, virtual_key=True, hold_seconds=.150))
+        self.assertEqual(packets, [(ord("Q"), 0, 0), (ord("Q"), 0, 2)])
+        self.assertEqual(waits, [.150])
+
     def test_foreground_and_stop_block_input(self):
         native = self.native()
         cancel = threading.Event()
@@ -288,11 +376,185 @@ class InputTests(unittest.TestCase):
         self.assertFalse(native.send("E", 123, threading.Event()))
         self.assertEqual(self.packets, [])
 
+    def test_mining_detection_during_handshake_blocks_queued_attack(self):
+        native = self.native()
+        mining = threading.Event()
+        native._hid_keyboard = Mock()
+        native._hid_keyboard.prepare.side_effect = mining.set
+        worker = CombatWorker(native, queue.Queue(), mining_active=mining.is_set)
+        self.assertFalse(worker._send_attack("R", 123))
+        native._hid_keyboard.tap.assert_not_called()
+        self.assertEqual(self.packets, [])
+
     def test_windows_input_structure_size(self):
         self.assertEqual(ctypes.sizeof(INPUT), 40 if ctypes.sizeof(ctypes.c_void_p) == 8 else 28)
 
 
 class WorkerTests(unittest.TestCase):
+    def test_mining_suppresses_q_e_r_until_resume_but_allows_v(self):
+        import numpy as np
+
+        clock, sent = [0.0], []
+        region = dict(left=10, top=10, width=40, height=40)
+        reference = np.zeros((40, 40, 3), np.uint8)
+        mining_until = 2.2
+
+        class Capture:
+            monitors = [{}, dict(left=0, top=0, width=600, height=300)]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                pass
+
+            def grab(self, rect):
+                return np.zeros((rect["height"], rect["width"], 4), np.uint8)
+
+        def send(key, hwnd, cancel, *, recheck=None):
+            if recheck is not None and not recheck():
+                return False
+            sent.append((clock[0], key))
+            return True
+
+        worker = CombatWorker(SimpleNamespace(foreground=lambda: 123, modifiers_down=lambda: False, send=send),
+                              queue.Queue(), mining_active=lambda: clock[0] < mining_until)
+
+        def wait(seconds):
+            clock[0] += seconds
+            if clock[0] > 3.1:
+                worker.cancel.set()
+
+        worker.cancel.wait = wait
+        options = {"poison_region": dict(region, top=200)}
+        for i, key in enumerate(("strike", "judgment", "sanction"), 1):
+            options[key + "_region"] = dict(region, left=i * 100)
+            options[key + "_reference"] = np.full_like(reference, i)
+
+        def classify(frame, baseline):
+            return not (baseline[0, 0, 0] == 3 and any(key == "R" for _, key in sent)), 1.0
+
+        detector = SimpleNamespace(find=lambda frame: object() if clock[0] < 0.3 else None)
+        with (patch("mss.MSS", Capture), patch("auto_combat.time.monotonic", lambda: clock[0]),
+              patch("auto_combat.PoisonDetector", return_value=detector),
+              patch("auto_combat.classify_icon", return_value=(True, 1.0)),
+              patch("auto_combat.classify_attack_icon", classify)):
+            worker.run(123, region, reference, 0.9, options)
+        self.assertFalse(any(kind == "error" for kind, _ in worker.events.queue))
+        self.assertEqual([key for now, key in sent if now < mining_until], ["V"])
+        self.assertEqual(list(dict.fromkeys(key for now, key in sent if now >= mining_until)), ["R", "E", "Q"])
+
+    def test_worker_sends_r_first_then_e_when_sanction_cools(self):
+        import numpy as np
+
+        clock, sent = [0.0], []
+        region = dict(left=10, top=10, width=40, height=40)
+        reference = np.zeros((40, 40, 3), np.uint8)
+
+        class Capture:
+            monitors = [{}, dict(left=0, top=0, width=600, height=300)]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                pass
+
+            def grab(self, rect):
+                return np.zeros((rect["height"], rect["width"], 4), np.uint8)
+
+        def send(key, hwnd, cancel):
+            sent.append(key)
+            if len(sent) == 2 or clock[0] > 2:
+                cancel.set()
+            return True
+
+        worker = CombatWorker(SimpleNamespace(foreground=lambda: 123, modifiers_down=lambda: False, send=send),
+                              queue.Queue())
+
+        def wait(seconds):
+            clock[0] += seconds
+            if clock[0] > 2:
+                worker.cancel.set()
+
+        worker.cancel.wait = wait
+        options = {}
+        for i, key in enumerate(("strike", "judgment", "sanction"), 1):
+            options[key + "_region"] = dict(region, left=i * 100)
+            options[key + "_reference"] = np.full_like(reference, i)
+
+        def classify(frame, baseline):
+            return not (baseline[0, 0, 0] == 3 and "R" in sent), 1.0
+
+        with (patch("mss.MSS", Capture), patch("auto_combat.time.monotonic", lambda: clock[0]),
+              patch("auto_combat.classify_icon", return_value=(False, 0.0)),
+              patch("auto_combat.classify_attack_icon", classify)):
+            worker.run(123, region, reference, 0.9, options)
+        self.assertFalse(any(kind == "error" for kind, _ in worker.events.queue))
+        self.assertEqual(sent, ["R", "E"])
+
+    def test_nearby_icons_share_a_capture_with_correct_crops(self):
+        import numpy as np
+
+        clock, grabs = [0.0], []
+        desktop = np.zeros((100, 240, 4), np.uint8)
+        desktop[:, :, 0] = np.arange(240)
+        desktop[:, :, 1] = np.arange(100)[:, None]
+        seal = dict(left=10, top=10, width=40, height=40)
+        strike = dict(left=53, top=12, width=33, height=34)
+        judgment = dict(left=90, top=14, width=35, height=36)
+
+        def pixels(rect):
+            x, y, width, height = (rect[key] for key in ("left", "top", "width", "height"))
+            return desktop[y:y + height, x:x + width]
+
+        class Capture:
+            monitors = [{}, dict(left=0, top=0, width=240, height=100)]
+
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+
+            def grab(self, rect):
+                grabs.append((clock[0], rect))
+                return pixels(rect)
+
+        def classify(frame, reference, *args):
+            np.testing.assert_array_equal(frame, reference)
+            return None, 0.0
+
+        native = SimpleNamespace(foreground=lambda: 123, modifiers_down=lambda: False)
+        worker = CombatWorker(native, queue.Queue())
+
+        def wait(seconds):
+            clock[0] += seconds
+            if clock[0] >= 0.08:
+                worker.cancel.set()
+
+        worker.cancel.wait = wait
+        options = dict(strike_region=strike, strike_reference=pixels(strike)[:, :, :3],
+                       judgment_region=judgment, judgment_reference=pixels(judgment)[:, :, :3])
+        with (patch("mss.MSS", Capture), patch("auto_combat.time.monotonic", lambda: clock[0]),
+              patch("auto_combat.classify_icon", classify), patch("auto_combat.classify_attack_icon", classify)):
+            worker.run(123, seal, pixels(seal)[:, :, :3], 0.9, options)
+
+        self.assertFalse(any(kind == "error" for kind, _ in worker.events.queue))
+        self.assertGreaterEqual(len(grabs), 3)
+        self.assertTrue(all(rect == dict(left=10, top=10, width=115, height=40) for _, rect in grabs))
+        self.assertLess(grabs[1][0] - grabs[0][0], 0.04)
+
+    def test_far_apart_or_cross_monitor_icons_use_separate_captures(self):
+        left_monitor = dict(left=-200, top=0, width=200, height=100)
+        right_monitor = dict(left=0, top=0, width=200, height=100)
+        for monitors, positions in (
+            ([right_monitor], (0, 80, 180)),
+            ([left_monitor, right_monitor], (-20, 0, 20)),
+        ):
+            with self.subTest(positions=positions):
+                regions = {key: dict(left=x, top=10, width=20, height=20)
+                           for key, x in zip(("seal", "strike", "judgment"), positions)}
+                self.assertEqual([rect for rect, _ in _skill_capture_plan(regions, monitors)],
+                                 list(regions.values()))
+
     def test_missing_attack_calibration_blocks_before_any_input(self):
         events = queue.Queue()
         worker = CombatWorker(SimpleNamespace(), events)

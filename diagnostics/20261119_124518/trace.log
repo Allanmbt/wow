@@ -1,0 +1,29 @@
+[12:45:18] 只读诊断 v1：不会攻击/净化/拾取；请先关闭原战斗助手。
+[12:45:18] 解释器=D:\github\wow\.venv-local\Scripts\python.exe | 脚本=D:\github\wow\diagnose_ctrl.py
+[12:45:18] 结果目录=D:\github\wow\diagnostics\20261119_124518
+[12:45:18] 操作：切到游戏并单击游戏内空白位置 → 单独按住Ctrl约0.3秒再松开 → 在游戏中等2秒。
+[12:45:18] 重复2次，然后回此窗口截图。F10结束测试；90秒也会自动结束。
+[12:45:18] [0 自检] 配置检查通过
+[12:45:18] [1 监听] Ctrl/F10已就绪，请切回游戏测试
+[12:46:36] [2 原始按键] Ctrl 按下 | 其他键=False | 本次曾组合=False
+[12:46:36]     其他键名称：[]
+[12:46:36]     此时前台：标题='ChatGPT' | PID=5356 | HWND=5506686 | 本进程=False
+{"event": "Ctrl 按下", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}, "mouse_window": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}}}
+[12:46:36] [2 原始按键] Ctrl 期间检测到其他按键/鼠标键 | 其他键=True | 本次曾组合=False
+[12:46:36]     其他键名称：['A']
+[12:46:36]     此时前台：标题='ChatGPT' | PID=5356 | HWND=5506686 | 本进程=False
+{"event": "Ctrl 期间检测到其他按键/鼠标键", "combo": true, "used": false, "keys": ["A"], "snapshot": {"foreground": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}, "mouse_window": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}}}
+[12:46:36] [2 原始按键] Ctrl 松开 | 其他键=False | 本次曾组合=True
+[12:46:36]     其他键名称：[]
+[12:46:36]     此时前台：标题='ChatGPT' | PID=5356 | HWND=5506686 | 本进程=False
+{"event": "Ctrl 松开", "combo": false, "used": true, "keys": [], "snapshot": {"foreground": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}, "mouse_window": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}}}
+[12:46:48] 诊断已保存：D:\github\wow\diagnostics\20261119_124518\trace.log
+[12:46:48] ========== 请截图下面的诊断汇总 ==========
+[12:46:48] A. Ctrl原始事件：按下1次 / 松开1次
+[12:46:48] B. 原开关逻辑接受：0次
+[12:46:48] C. Ctrl期间同时发现的其他键：A
+[12:46:48] D. 最后一次Ctrl事件前台：标题='ChatGPT' | PID=5356 | HWND=5506686 | 本进程=False
+[12:46:48]    进程=C:\Program Files\WindowsApps\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\app\ChatGPT.exe
+[12:46:48]    鼠标所在窗口=ChatGPT
+[12:46:48] H. 异常=无
+[12:46:48] 完整记录：D:\github\wow\diagnostics\20261119_124518\trace.log

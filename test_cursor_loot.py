@@ -13,7 +13,8 @@ import cv2
 import numpy as np
 
 from auto_combat import CombatApp, WindowsInput
-from cursor_loot import BAG_PATH, CursorFrame, CursorMatcher, CursorReader, HoverLatch, LootMonitor
+from cursor_loot import (BAG_PATH, LOOT_TEMPLATE, MINING_TEMPLATE, CursorFrame, CursorMatcher,
+                         CursorReader, HoverLatch, LootMonitor, MiningMonitor)
 
 
 def bag_frame():
@@ -272,22 +273,74 @@ class MonitorTests(unittest.TestCase):
 
 
 class IsolationTests(unittest.TestCase):
-    def test_loot_toggle_and_start_failure_never_stop_combat(self):
+    def test_loot_start_failure_never_stops_combat_or_mining(self):
         app = CombatApp.__new__(CombatApp)
         app.worker = Mock()
-        app.root, app.loot_status = Mock(), Mock()
-        app.cursor_loot, app.stop_on_error = Mock(), Mock()
+        app.root, app.loot_status, app.mining_status = Mock(), Mock(), Mock()
+        app.combat_mode, app.cursor_loot, app.cursor_mining = Mock(), Mock(), Mock()
         app.cursor_loot.get.return_value = True
-        app.loot_arming_id = app.loot_monitor = None
-        app.last_game_hwnd, app.hotkeys_ok = 123, True
+        app.cursor_mining.get.return_value = True
+        app.loot_monitor, app.mining_monitor = None, Mock()
+        app.bound_window, app.hotkeys_ok = 123, True
         app.native = SimpleNamespace(is_own_window=lambda hwnd: False)
         app.events, app.persist = queue.Queue(), Mock()
-        with patch("auto_combat.LootMonitor", side_effect=ValueError("bag.jpg 无效")):
-            app.save_loot_toggle()
+        with patch("auto_combat.LootMonitor", side_effect=ValueError("拾取模板无效")):
+            app.save_modes()
         app.worker.stop.assert_not_called()
         app.worker.start.assert_not_called()
-        app.stop_on_error.set.assert_not_called()
-        app.cursor_loot.set.assert_called_once_with(False)
+        app.mining_monitor.stop.assert_not_called()
+        self.assertIn("拾取模板无效", app.loot_status.set.call_args.args[0])
+
+    def test_mining_repeats_after_four_seconds_and_stops_when_replaced_by_loot(self):
+        def read(path):
+            ref = cv2.imdecode(np.frombuffer(path.read_bytes(), np.uint8), cv2.IMREAD_UNCHANGED)
+            return ref, CursorFrame(ref[:, :, :3].copy(), ref[:, :, 3].copy(), (555, 333))
+        mining_ref, mining = read(MINING_TEMPLATE)
+        _, loot = read(LOOT_TEMPLATE)
+        clock, clicks = [0.0], []
+        monitor = MiningMonitor.__new__(MiningMonitor)
+        monitor.hwnd, monitor.events = 123, queue.Queue()
+        monitor.cancel = threading.Event()
+        monitor.matcher = CursorMatcher(mining_ref)
+        monitor._attack_pause, monitor._missing_since = threading.Event(), None
+
+        def wait(seconds):
+            clock[0] = round(clock[0] + seconds, 3)
+            if clock[0] >= 9:
+                self.assertFalse(monitor.attack_paused)
+                monitor.cancel.set()
+
+        def click(hwnd, cancel, recheck):
+            if recheck():
+                self.assertTrue(monitor.attack_paused)
+                clicks.append(clock[0])
+                return True
+            return False
+
+        monitor.cancel.wait = wait
+        monitor.native = SimpleNamespace(foreground=lambda: 123, right_click=click)
+        reader = SimpleNamespace(capture=lambda: mining if clock[0] < 4.5 else loot)
+        with patch("cursor_loot.CursorReader", return_value=reader), patch("cursor_loot.time.monotonic", lambda: clock[0]):
+            monitor.run()
+        self.assertEqual(clicks, [0.2, 4.2])
+
+    def test_mining_pauses_at_first_match_and_requires_sustained_absence(self):
+        with patch.object(LootMonitor, "__init__"):
+            monitor = MiningMonitor(None, 123, queue.Queue())
+        monitor.cancel = threading.Event()
+        self.assertFalse(monitor.attack_paused)
+        monitor.on_cursor_sample(0.0, True)
+        self.assertTrue(monitor.attack_paused)
+        monitor.on_cursor_sample(0.1, False)
+        monitor.on_cursor_sample(0.2, None)
+        monitor.on_cursor_sample(0.6, False)
+        monitor.on_cursor_sample(0.8, True)
+        self.assertTrue(monitor.attack_paused)
+        monitor.on_cursor_sample(1.0, False)
+        monitor.on_cursor_sample(1.2, False)
+        self.assertTrue(monitor.attack_paused)
+        monitor.on_cursor_sample(1.4, False)
+        self.assertFalse(monitor.attack_paused)
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 import cv2
 import numpy as np
 
-from cursor_loot import BAG_PATH, CursorMatcher, LootMonitor
+from cursor_loot import BAG_PATH, LOOT_TEMPLATE, CursorMatcher, LootMonitor
 from screen_loot import ScreenLootProbe
 
 
@@ -63,6 +63,18 @@ class ScreenTests(unittest.TestCase):
                 else:
                     self.assertIsNotNone(hit)
                     self.assertTrue(self.probe.verify(hit))
+
+    def test_transparent_template_accepts_sixty_seven_percent_in_both_checks(self):
+        reference = cv2.imdecode(np.frombuffer(LOOT_TEMPLATE.read_bytes(), np.uint8), cv2.IMREAD_UNCHANGED)
+        probe = ScreenLootProbe(None, None, reference)
+        template, mask = probe.templates[0]
+        probe.templates = [(template, mask)]
+        probe.same_position = lambda position: True
+        probe.grab = lambda region: template.copy()
+        with patch("cv2.matchTemplate", return_value=np.array([[0.67]], np.float32)):
+            hit = probe.match(template, (0, 0), (0, 0))
+            self.assertIsNotNone(hit)
+            self.assertTrue(probe.verify(hit))
 
     def test_software_cursor_can_click_when_windows_cursor_is_hidden(self):
         hit = self.probe.match(self.scene(0.3), (40, 45), (0, 0))

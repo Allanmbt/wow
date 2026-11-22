@@ -72,6 +72,9 @@ class PoisonTests(unittest.TestCase):
         app.e_references = dict(strike=None, judgment=None)
         app.threshold, app.cursor_loot, app.regions_label = .9, Mock(), Mock()
         app.cursor_loot.get.return_value = True
+        app.combat_mode, app.cursor_mining = Mock(), Mock()
+        app.combat_mode.get.return_value = True
+        app.cursor_mining.get.return_value = False
         frame = scene()
         rect = dict(left=100, top=100, width=240, height=75)
         def select(root, selected, closed, **kwargs):

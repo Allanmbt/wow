@@ -1,0 +1,254 @@
+[12:46:59] 只读诊断 v1：不会攻击/净化/拾取；请先关闭原战斗助手。
+[12:46:59] 解释器=D:\github\wow\.venv-local\Scripts\python.exe | 脚本=D:\github\wow\diagnose_ctrl.py
+[12:46:59] 结果目录=D:\github\wow\diagnostics\20261119_124659
+[12:46:59] 操作：切到游戏并单击游戏内空白位置 → 单独按住Ctrl约0.3秒再松开 → 在游戏中等2秒。
+[12:46:59] 重复2次，然后回此窗口截图。F10结束测试；90秒也会自动结束。
+[12:46:59] [0 自检] 配置检查通过
+[12:46:59] [1 监听] Ctrl/F10已就绪，请切回游戏测试
+[12:47:11] [2 原始按键] Ctrl 按下 | 其他键=False | 本次曾组合=False
+[12:47:11]     其他键名称：[]
+[12:47:11]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 按下", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:11] [2 原始按键] Ctrl 松开 | 其他键=False | 本次曾组合=False
+[12:47:11]     其他键名称：[]
+[12:47:11]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 松开", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:11] [2 开关] 第1次Ctrl已被原开关逻辑接受
+[12:47:12] [3 前台/即刻] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:12]     进程=
+[12:47:12]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:12]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:12] [4 配置] 文件可读、技能位置互不冲突
+[12:47:12] [5 发键条件] 按住的修饰键=Ctrl
+[12:47:12] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:12] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:12] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:12] [2 原始按键] Ctrl 按下 | 其他键=False | 本次曾组合=False
+[12:47:12]     其他键名称：[]
+[12:47:12]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 按下", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:12] [2 原始按键] Ctrl 松开 | 其他键=False | 本次曾组合=False
+[12:47:12]     其他键名称：[]
+[12:47:12]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 松开", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:12] [2 开关] 第2次Ctrl已被原开关逻辑接受
+[12:47:12] [3 前台/即刻] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:12]     进程=
+[12:47:12]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:12]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:12] [4 配置] 文件可读、技能位置互不冲突
+[12:47:12] [5 发键条件] 按住的修饰键=无
+[12:47:12] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:12] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:12] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:12] [2 原始按键] Ctrl 按下 | 其他键=False | 本次曾组合=False
+[12:47:12]     其他键名称：[]
+[12:47:12]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 按下", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:12] [3 前台/350毫秒] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:12]     进程=
+[12:47:12]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:12]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:12] [4 配置] 文件可读、技能位置互不冲突
+[12:47:12] [5 发键条件] 按住的修饰键=Ctrl
+[12:47:12] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:12] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:12] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:12] [2 原始按键] Ctrl 松开 | 其他键=False | 本次曾组合=False
+[12:47:12]     其他键名称：[]
+[12:47:12]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 松开", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:12] [2 开关] 第3次Ctrl已被原开关逻辑接受
+[12:47:12] [3 前台/即刻] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:12]     进程=
+[12:47:12]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:12]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:12] [4 配置] 文件可读、技能位置互不冲突
+[12:47:12] [5 发键条件] 按住的修饰键=无
+[12:47:12] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:12] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:12] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:12] [2 原始按键] Ctrl 按下 | 其他键=False | 本次曾组合=False
+[12:47:12]     其他键名称：[]
+[12:47:12]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 按下", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:12] [3 前台/350毫秒] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:12]     进程=
+[12:47:12]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:12]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:12] [4 配置] 文件可读、技能位置互不冲突
+[12:47:12] [5 发键条件] 按住的修饰键=Ctrl
+[12:47:12] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:12] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:12] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:12] [2 原始按键] Ctrl 松开 | 其他键=False | 本次曾组合=False
+[12:47:12]     其他键名称：[]
+[12:47:12]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 松开", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:12] [2 开关] 第4次Ctrl已被原开关逻辑接受
+[12:47:12] [3 前台/即刻] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:12]     进程=
+[12:47:12]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:12]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:12] [4 配置] 文件可读、技能位置互不冲突
+[12:47:12] [5 发键条件] 按住的修饰键=无
+[12:47:12] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:12] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:12] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:12] [3 前台/350毫秒] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:12]     进程=
+[12:47:12]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:12]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:12] [4 配置] 文件可读、技能位置互不冲突
+[12:47:12] [5 发键条件] 按住的修饰键=Ctrl
+[12:47:12] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:12] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:12] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:12] [2 原始按键] Ctrl 按下 | 其他键=False | 本次曾组合=False
+[12:47:12]     其他键名称：[]
+[12:47:12]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 按下", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:12] [3 前台/850毫秒] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:12]     进程=
+[12:47:12]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:12]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:12] [4 配置] 文件可读、技能位置互不冲突
+[12:47:12] [5 发键条件] 按住的修饰键=Ctrl
+[12:47:12] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:12] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:12] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:12] [2 原始按键] Ctrl 松开 | 其他键=False | 本次曾组合=False
+[12:47:12]     其他键名称：[]
+[12:47:12]     此时前台：标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+{"event": "Ctrl 松开", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 0, "title": "无前台窗口", "pid": 0, "process": "", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:12] [2 开关] 第5次Ctrl已被原开关逻辑接受
+[12:47:12] [3 前台/即刻] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:12]     进程=
+[12:47:12]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:12]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:12] [4 配置] 文件可读、技能位置互不冲突
+[12:47:12] [5 发键条件] 按住的修饰键=无
+[12:47:12] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:12] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:12] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:12] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:13] [3 前台/850毫秒] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:13]     进程=
+[12:47:13]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:13] [4 配置] 文件可读、技能位置互不冲突
+[12:47:13] [5 发键条件] 按住的修饰键=无
+[12:47:13] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:13]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:13] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:13] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:13] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:13] [3 前台/350毫秒] 标题='无前台窗口' | PID=0 | HWND=0 | 本进程=False
+[12:47:13]     进程=
+[12:47:13]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     原程序前台检查=未通过：空窗口或工具自身
+[12:47:13] [4 配置] 文件可读、技能位置互不冲突
+[12:47:13] [5 发键条件] 按住的修饰键=无
+[12:47:13] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:13]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:13] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=False
+[12:47:13] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=False
+[12:47:13] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:13] [3 前台/850毫秒] 标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     进程=D:\Program Files\World of Warcraft\_forever_\Wow.exe
+[12:47:13]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     原程序前台检查=通过；请核对上述标题是否确实是游戏
+[12:47:13] [4 配置] 文件可读、技能位置互不冲突
+[12:47:13] [5 发键条件] 按住的修饰键=无
+[12:47:13] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=True
+[12:47:13]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:13] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=True
+[12:47:13] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=True
+[12:47:13] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:13] [3 前台/350毫秒] 标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     进程=D:\Program Files\World of Warcraft\_forever_\Wow.exe
+[12:47:13]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     原程序前台检查=通过；请核对上述标题是否确实是游戏
+[12:47:13] [4 配置] 文件可读、技能位置互不冲突
+[12:47:13] [5 发键条件] 按住的修饰键=无
+[12:47:13] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=True
+[12:47:13]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:13] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=True
+[12:47:13] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=True
+[12:47:13] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:13] [3 前台/850毫秒] 标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     进程=D:\Program Files\World of Warcraft\_forever_\Wow.exe
+[12:47:13]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     原程序前台检查=通过；请核对上述标题是否确实是游戏
+[12:47:13] [4 配置] 文件可读、技能位置互不冲突
+[12:47:13] [5 发键条件] 按住的修饰键=无
+[12:47:13] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=True
+[12:47:13]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:13] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=True
+[12:47:13] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=True
+[12:47:13] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:13] [3 前台/850毫秒] 标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     进程=D:\Program Files\World of Warcraft\_forever_\Wow.exe
+[12:47:13]     鼠标所在窗口：标题='魔兽世界' | PID=19716 | HWND=33884210 | 本进程=False
+[12:47:13]     原程序前台检查=通过；请核对上述标题是否确实是游戏
+[12:47:13] [4 配置] 文件可读、技能位置互不冲突
+[12:47:13] [5 发键条件] 按住的修饰键=无
+[12:47:13] [6 图标/圣印] 就绪 | 相似度=100.0% | 位于前台客户区=True
+[12:47:13]     Q 判断=本帧符合；还需连续稳定约0.6秒
+[12:47:13] [6 图标/神圣打击] 就绪 | 相似度=100.0% | 位于前台客户区=True
+[12:47:13] [6 图标/审判] 未知 | 相似度=75.6% | 位于前台客户区=True
+[12:47:13] [7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。
+[12:47:30] [2 原始按键] Ctrl 按下 | 其他键=False | 本次曾组合=False
+[12:47:30]     其他键名称：[]
+[12:47:30]     此时前台：标题='选择 Windows PowerShell' | PID=16312 | HWND=16975820 | 本进程=False
+{"event": "Ctrl 按下", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 16975820, "title": "选择 Windows PowerShell", "window_class": "ConsoleWindowClass", "pid": 16312, "process": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "own": false}, "mouse_window": {"hwnd": 16975820, "title": "选择 Windows PowerShell", "window_class": "ConsoleWindowClass", "pid": 16312, "process": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "own": false}}}
+[12:47:30] [2 原始按键] Ctrl 期间检测到其他按键/鼠标键 | 其他键=True | 本次曾组合=False
+[12:47:30]     其他键名称：['C']
+[12:47:30]     此时前台：标题='Windows PowerShell' | PID=16312 | HWND=16975820 | 本进程=False
+{"event": "Ctrl 期间检测到其他按键/鼠标键", "combo": true, "used": false, "keys": ["C"], "snapshot": {"foreground": {"hwnd": 16975820, "title": "Windows PowerShell", "window_class": "ConsoleWindowClass", "pid": 16312, "process": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "own": false}, "mouse_window": {"hwnd": 16975820, "title": "Windows PowerShell", "window_class": "ConsoleWindowClass", "pid": 16312, "process": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "own": false}}}
+[12:47:30] [2 原始按键] Ctrl 松开 | 其他键=False | 本次曾组合=True
+[12:47:30]     其他键名称：[]
+[12:47:30]     此时前台：标题='Windows PowerShell' | PID=16312 | HWND=16975820 | 本进程=False
+{"event": "Ctrl 松开", "combo": false, "used": true, "keys": [], "snapshot": {"foreground": {"hwnd": 16975820, "title": "Windows PowerShell", "window_class": "ConsoleWindowClass", "pid": 16312, "process": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "own": false}, "mouse_window": {"hwnd": 33884210, "title": "魔兽世界", "window_class": "waApplication Window", "pid": 19716, "process": "D:\\Program Files\\World of Warcraft\\_forever_\\Wow.exe", "own": false}}}
+[12:47:31] [2 原始按键] Ctrl 按下 | 其他键=False | 本次曾组合=False
+[12:47:31]     其他键名称：[]
+[12:47:31]     此时前台：标题='ChatGPT' | PID=5356 | HWND=5506686 | 本进程=False
+{"event": "Ctrl 按下", "combo": false, "used": false, "keys": [], "snapshot": {"foreground": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}, "mouse_window": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}}}
+[12:47:31] [2 原始按键] Ctrl 期间检测到其他按键/鼠标键 | 其他键=True | 本次曾组合=False
+[12:47:31]     其他键名称：['V']
+[12:47:31]     此时前台：标题='ChatGPT' | PID=5356 | HWND=5506686 | 本进程=False
+{"event": "Ctrl 期间检测到其他按键/鼠标键", "combo": true, "used": false, "keys": ["V"], "snapshot": {"foreground": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}, "mouse_window": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}}}
+[12:47:32] [2 原始按键] Ctrl 松开 | 其他键=False | 本次曾组合=True
+[12:47:32]     其他键名称：[]
+[12:47:32]     此时前台：标题='ChatGPT' | PID=5356 | HWND=5506686 | 本进程=False
+{"event": "Ctrl 松开", "combo": false, "used": true, "keys": [], "snapshot": {"foreground": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}, "mouse_window": {"hwnd": 5506686, "title": "ChatGPT", "window_class": "Chrome_WidgetWin_1", "pid": 5356, "process": "C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe", "own": false}}}
+[12:48:29] 诊断已保存：D:\github\wow\diagnostics\20261119_124659\trace.log
+[12:48:29] ========== 请截图下面的诊断汇总 ==========
+[12:48:29] A. Ctrl原始事件：按下7次 / 松开7次
+[12:48:29] B. 原开关逻辑接受：5次
+[12:48:29] C. Ctrl期间同时发现的其他键：C、V
+[12:48:29] D. 最后一次Ctrl事件前台：标题='ChatGPT' | PID=5356 | HWND=5506686 | 本进程=False
+[12:48:29]    进程=C:\Program Files\WindowsApps\OpenAI.Codex_26.1111.9265.0_x64__2p2nqsd0c76g0\app\ChatGPT.exe
+[12:48:29]    鼠标所在窗口=ChatGPT
+[12:48:29] E. 探测15次；最后一次Q识别=True（True才符合Q图标条件）
+[12:48:29] F. 图标坐标位于前台客户区：{'seal': True, 'strike': True, 'judgment': True}
+[12:48:29] G. 最后探测时修饰键：无
+[12:48:29] H. 异常=无
+[12:48:29] 完整记录：D:\github\wow\diagnostics\20261119_124659\trace.log

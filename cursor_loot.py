@@ -1,4 +1,4 @@
-"""读取 Windows 当前指针并匹配 bag.jpg；不依赖屏幕截图中的鼠标。"""
+"""悬停指针匹配和原地鼠标交互。"""
 
 import ctypes
 from ctypes import wintypes as w
@@ -10,6 +10,9 @@ import time
 from screen_loot import LOOT_THRESHOLD, ScreenLootProbe
 
 BAG_PATH = Path(__file__).resolve().parent / "bag.jpg"
+LOOT_TEMPLATE = BAG_PATH.with_name("loot_cursor.png")
+MINING_TEMPLATE = BAG_PATH.with_name("mining_cursor.png")
+MINING_CLEAR_SECONDS = 0.35
 
 
 class CURSORINFO(ctypes.Structure):
@@ -263,10 +266,10 @@ class CursorMatcher:
 
 
 class HoverLatch:
-    """悬停稳定后仅触发一次，离开袋子图标至少 0.4 秒才重置。"""
+    """悬停稳定后点一次。图标消失或指针明显移动后允许再次触发。"""
 
     def __init__(self):
-        self.since = self.absent = self.position = None
+        self.since = self.absent = self.position = self.click_position = None
         self.latched = False
         self.last_click = -float("inf")
 
@@ -279,16 +282,48 @@ class HoverLatch:
                 self.latched = False
             return False
         self.absent = None
+        if self.latched and self.click_position and max(abs(a-b) for a, b in zip(position, self.click_position)) > 24:
+            self.latched = False
         if self.position is None or max(abs(a - b) for a, b in zip(position, self.position)) > 4:
             self.since, self.position = now, position
         return not self.latched and now - self.since >= 0.15 and now - self.last_click >= 1.0
 
     def clicked(self, now):
         self.latched, self.last_click = True, now
+        self.click_position = self.position
+
+    def label(self, now):
+        return "已点一次 · 等待新的悬停" if self.latched else "等待拾取指针稳定出现"
+
+
+class MiningLatch:
+    def __init__(self):
+        self.since = self.position = None
+        self.next_click = -float("inf")
+
+    def observe(self, now, matched, position):
+        if not matched:
+            self.since = self.position = None
+            return False
+        if self.position is None or max(abs(a-b) for a, b in zip(position, self.position)) > 4:
+            self.position, self.since = position, now
+        return now >= self.next_click and now - self.since >= 0.15
+
+    def clicked(self, now):
+        self.next_click = now + 4.0
+
+    def label(self, now):
+        if self.position is not None and now < self.next_click:
+            return f"采矿指针仍在 · {self.next_click - now:.1f} 秒后复点"
+        return "等待采矿指针稳定出现"
 
 
 class LootMonitor:
-    def __init__(self, native, hwnd, events, path=BAG_PATH):
+    label = "自动拾取"
+    event = "loot"
+    latch_type = HoverLatch
+
+    def __init__(self, native, hwnd, events, path=LOOT_TEMPLATE):
         import cv2
         import numpy as np
 
@@ -307,6 +342,9 @@ class LootMonitor:
         self.cancel.set()
         self.thread.join(timeout=1.0)
 
+    def on_cursor_sample(self, now, matched):
+        """Receive a positive, negative, or unavailable cursor sample."""
+
     def run(self):
         screen = None
         try:
@@ -322,40 +360,56 @@ class LootMonitor:
                 except Exception as exc:
                     screen_note = f"画面备用识别不可用：{exc}"
                     self.events.put(("log", screen_note))
-            latch = HoverLatch()
+            latch = self.latch_type()
             last_update = 0
+            screen_retry_at = 0.0
             click_status = ""
             while not self.cancel.is_set():
                 if self.native.foreground() != self.hwnd:
                     latch.since = latch.position = None
+                    self.on_cursor_sample(time.monotonic(), None)
                     if time.monotonic() - last_update >= 0.7:
-                        self.events.put(("loot", (self, "自动拾取：等待回到绑定的游戏窗口")))
+                        self.events.put((self.event, (self, f"{self.label} · 等待回到绑定窗口")))
                         last_update = time.monotonic()
                     self.cancel.wait(0.1)
                     continue
+                observed = False
                 try:
                     frame = reader.capture() if reader else None
+                    observed = reader is not None
                 except OSError as exc:
                     frame, native_note = None, str(exc)
                 score = self.matcher.score(frame)
                 native_score = score
                 hit = None
                 if score < LOOT_THRESHOLD and screen is not None:
-                    try:
-                        hit = screen.find()
-                    except Exception as exc:
-                        screen_note = f"画面备用识别不可用：{exc}"
-                        self.events.put(("log", screen_note))
-                        screen.close()
-                        screen = None
-                    if hit is not None:
-                        score = hit.score
+                    observed = False
+                    if time.monotonic() >= screen_retry_at:
+                        try:
+                            hit = screen.find()
+                            observed = True
+                        except Exception as exc:
+                            screen_note = f"画面抓取失败，稍后重试 · {exc}"
+                            self.events.put(("log", screen_note))
+                            screen.close()
+                            screen_retry_at = time.monotonic() + 0.5
+                        if hit is not None:
+                            score = hit.score
                 position = hit.position if hit else (frame.position if frame else (0, 0))
                 now = time.monotonic()
-                if latch.observe(now, score >= LOOT_THRESHOLD, position):
+                matched = score >= LOOT_THRESHOLD
+                self.on_cursor_sample(now, matched if observed else None)
+                if latch.observe(now, matched, position):
                     if hit is not None:
                         # 截图和图像运算放在键鼠锁外，避免拖延 Q/E。
-                        verified = screen.verify(hit)
+                        try:
+                            verified = screen.verify(hit)
+                        except Exception as exc:
+                            verified = False
+                            screen_note = f"画面复核失败，稍后重试 · {exc}"
+                            self.events.put(("log", screen_note))
+                            screen.close()
+                            screen_retry_at = time.monotonic() + 0.5
                         verified_at = time.monotonic()
                         def recheck():
                             return (verified and time.monotonic() - verified_at <= 0.15
@@ -364,31 +418,62 @@ class LootMonitor:
                         matched_signature = self.matcher.signature(frame)
                         def recheck():
                             current = reader.capture()
-                            return (current is not None and self.matcher.signature(current) == matched_signature
+                            return (current is not None
+                                    and (self.matcher.signature(current) == matched_signature
+                                         or bool(frame.handle and frame.handle == current.handle))
                                     and max(abs(a - b) for a, b in zip(current.position, position)) <= 4)
                     if self.native.right_click(self.hwnd, self.cancel, recheck):
                         latch.clicked(time.monotonic())
                         click_status = ""
                         source = "画面" if hit else "系统指针"
-                        self.events.put(("log", f"{source}匹配 bag.jpg，已在当前位置右键一次"))
+                        backend = getattr(self.native, "mouse_name", "")
+                        output = f" · {backend}" if backend else ""
+                        self.events.put(("log", f"{self.label} · {source}已匹配，在当前位置右键一次{output}"))
                     else:
-                        click_status = " | 右键暂缓：指针变化、鼠标移动、按键占用或窗口不符"
+                        reason = getattr(self.native, "mouse_block_reason", "") or "指针、鼠标位置或窗口已变化"
+                        click_status = f" | 右键暂缓 · {reason}"
                         latch.since = latch.position = None
                 elif score < LOOT_THRESHOLD:
                     click_status = ""
                 if now - last_update >= 0.7:
-                    label = "已点一次，移开再移回可再次触发" if latch.latched else "等待袋子指针稳定出现"
-                    route = (f"画面命中 {hit.score:.0%}" if hit else
+                    label = latch.label(now)
+                    route = (f"画面命中 {hit.score:.1%}" if hit else
                              ("系统指针已匹配" if native_score >= LOOT_THRESHOLD else
-                              ("画面备用扫描中" if screen else screen_note)))
+                              (screen_note if now < screen_retry_at or not screen else "画面备用扫描中")))
                     if frame is None:
                         route = f"系统指针不可见 {native_note}；{route}"
-                    self.events.put(("loot", (self, f"自动拾取：{label} | 系统指针 {native_score:.0%} | {route}{click_status}")))
+                    self.events.put((self.event, (self, f"{self.label} · {label} | 系统指针 {native_score:.1%} | {route}{click_status}")))
                     last_update = now
                 self.cancel.wait(0.1)
         except Exception as exc:
             self.cancel.set()
-            self.events.put(("loot_error", (self, f"自动拾取已停止：{exc}")))
+            self.events.put((self.event + "_error", (self, f"{self.label}已停止 · {exc}")))
         finally:
             if screen is not None:
                 screen.close()
+
+
+class MiningMonitor(LootMonitor):
+    label = "自动采矿"
+    event = "mining"
+    latch_type = MiningLatch
+
+    def __init__(self, native, hwnd, events, path=MINING_TEMPLATE):
+        self._attack_pause = threading.Event()
+        self._missing_since = None
+        super().__init__(native, hwnd, events, path)
+
+    @property
+    def attack_paused(self):
+        return self._attack_pause.is_set() and not self.cancel.is_set()
+
+    def on_cursor_sample(self, now, matched):
+        if matched is not False:
+            self._missing_since = None
+            if matched:
+                self._attack_pause.set()
+        elif self._attack_pause.is_set():
+            if self._missing_since is None:
+                self._missing_since = now
+            elif now - self._missing_since >= MINING_CLEAR_SECONDS:
+                self._attack_pause.clear()
