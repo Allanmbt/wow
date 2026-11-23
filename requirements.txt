@@ -3,3 +3,4 @@ easyocr==1.7.2
 mss==10.2.0
 opencv-python-headless>=4.10,<5
 numpy>=1.26,<3
+pyserial==3.5

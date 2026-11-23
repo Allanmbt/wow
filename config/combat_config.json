@@ -1,0 +1,64 @@
+{
+  "ready_threshold": 0.9,
+  "poison_region": {
+    "left": 1419,
+    "top": 832,
+    "width": 43,
+    "height": 42
+  },
+  "poison_icon_size": 36,
+  "seal_region": {
+    "left": 1255,
+    "top": 942,
+    "width": 61,
+    "height": 63
+  },
+  "combat_mode": true,
+  "cursor_loot": true,
+  "cursor_mining": true,
+  "seal_dance": true,
+  "target_frame": {
+    "left": 1682,
+    "top": 942,
+    "width": 157,
+    "height": 60,
+    "client_width": 2560,
+    "client_height": 1351
+  },
+  "seal_setup": {
+    "current": {
+      "left": 1707,
+      "top": 1151,
+      "width": 31,
+      "height": 31,
+      "client_width": 2560,
+      "client_height": 1351
+    },
+    "storage": {
+      "left": 980,
+      "top": 931,
+      "width": 54,
+      "height": 50,
+      "client_width": 2560,
+      "client_height": 1351
+    }
+  },
+  "sanction_region": {
+    "left": 732,
+    "top": 1234,
+    "width": 58,
+    "height": 58
+  },
+  "strike_region": {
+    "left": 1191,
+    "top": 941,
+    "width": 60,
+    "height": 59
+  },
+  "judgment_region": {
+    "left": 1375,
+    "top": 944,
+    "width": 59,
+    "height": 57
+  }
+}
