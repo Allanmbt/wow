@@ -134,14 +134,12 @@ class Calibration:
                     setup[key], setup["storage_size"] = detector.learn_righteous(image)
                 else:
                     if key == "current":
-                        _, box, _ = detector.current_match(image)
-                        if box is None:
-                            raise ValueError("开启一种圣印后，框住插件进度条左端的图标")
-                        x, y, size = box
-                        left, top = max(0, x - 3), max(0, y - 3)
+                        match = detector.locate_current(image)
+                        if match is None:
+                            raise ValueError("开启命令或正义圣印，框住完整金边图标和下方名称")
+                        setup["current_format"], (left, top, width, height) = match
                         region = dict(left=region["left"] + left, top=region["top"] + top,
-                                      width=min(region["width"], x + size + 3) - left,
-                                      height=min(region["height"], y + size + 3) - top)
+                                      width=width, height=height)
                     else:
                         stored, _, known = detector.read_storage(image)
                         if not stored or not known:

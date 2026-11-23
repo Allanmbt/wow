@@ -7,8 +7,10 @@ import cv2
 import numpy as np
 
 from wow_assistant.combat.worker import CombatWorker
-from wow_assistant.vision.seal import (ASSET, COMMAND, NO_SEAL, RIGHTEOUS, RIGHTEOUS_STACK, SWITCH_GCD, SWITCH_RETRY_INTERVAL,
-                        SealAction, SealDancePolicy, SealDetector, SealMonitor, SealReading, setup_complete)
+from wow_assistant.vision.seal import (ASSET, COMMAND, CURRENT_BADGE, CURRENT_BAR, NO_SEAL, RIGHTEOUS, RIGHTEOUS_STACK,
+                                      SWITCH_GCD, SWITCH_RETRY_INTERVAL, SealAction, SealDancePolicy, SealDetector,
+                                      SealMonitor, SealReading, load_seal_setup, setup_complete)
+from wow_assistant.vision.seal_badge import BADGE_ASSET
 from wow_assistant.vision.target import DEAD, MISSING, NON_HOSTILE, UNKNOWN, TargetReading, saved_frame
 
 
@@ -138,6 +140,45 @@ class SealDanceTests(unittest.TestCase):
         self.assertTrue(known)
         self.assertEqual(stored, {RIGHTEOUS})
         self.assertEqual(three, {RIGHTEOUS})
+
+    def test_recalibrated_current_badge_ignores_timer_and_reads_both_seals(self):
+        atlas = cv2.imdecode(np.frombuffer(BADGE_ASSET.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
+        command, righteous = np.hsplit(atlas, 2)
+        client = dict(left=0, top=0, width=400, height=250)
+        mode, (x, y, width, height) = SealDetector({}).locate_current(command)
+        self.assertEqual(mode, CURRENT_BADGE)
+        self.assertGreater(height, 55)
+        current = saved_frame(dict(left=x+60, top=y+30, width=width, height=height), client)
+        setup = load_seal_setup({"current": current, "current_format": mode})
+        self.assertEqual(setup["current_format"], CURRENT_BADGE)
+        detector = SealDetector(setup)
+        for badge, expected in ((command, COMMAND), (righteous, RIGHTEOUS)):
+            for timer in ("3", "15", "27"):
+                with self.subTest(seal=expected, timer=timer):
+                    changed = badge.copy()
+                    changed[13:42, 27:60] = (40, 40, 40)
+                    cv2.putText(changed, timer, (29, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (245, 245, 245), 1)
+                    self.assertEqual(detector.read_current(changed[y:y+height, x:x+width], True), expected)
+                    smaller = cv2.resize(changed, None, fx=0.75, fy=0.75, interpolation=cv2.INTER_AREA)
+                    self.assertEqual(detector.read_current(smaller, False), expected)
+
+    def test_unknown_badge_does_not_report_an_empty_slot(self):
+        detector = SealDetector({"current_format": CURRENT_BADGE})
+        image = np.zeros((80, 87, 3), np.uint8)
+        cv2.rectangle(image, (16, 0), (70, 54), (13, 221, 247), 2)
+        self.assertIsNone(detector.read_current(image, True))
+        self.assertIsNone(detector.locate_current(image))
+        image[:] = 0
+        self.assertEqual(detector.read_current(image, True), NO_SEAL)
+        self.assertIsNone(detector.read_current(image, False))
+
+    def test_progress_bar_calibration_and_older_profiles_still_read_the_icon(self):
+        atlas = cv2.imdecode(np.frombuffer(ASSET.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
+        command = atlas[:, :48].copy()
+        mode, box = SealDetector({}).locate_current(command)
+        self.assertEqual(mode, CURRENT_BAR)
+        self.assertIsNotNone(box)
+        self.assertEqual(SealDetector({}).read_current(command, False), COMMAND)
 
     def test_righteous_sample_works_in_existing_storage_box(self):
         icon = cv2.imdecode(np.frombuffer(RIGHTEOUS_STACK.read_bytes(), np.uint8), cv2.IMREAD_COLOR)

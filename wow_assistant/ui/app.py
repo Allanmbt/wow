@@ -107,7 +107,7 @@ class CombatApp(Calibration):
         seal_menu = tk.Menu(self.seal_menu_button, tearoff=False)
         self.seal_menu_button.configure(menu=seal_menu)
         self.seal_menu = seal_menu
-        for key, caption in (("current", "当前圣印进度条"), ("storage", "左侧储存增益区"),
+        for key, caption in (("current", "当前圣印图标"), ("storage", "左侧储存增益区"),
                              ("righteous_icon", "正义储存三层图标")):
             seal_menu.add_command(label=caption, command=lambda key=key: self.calibrate_seal_dance(key))
 
@@ -217,7 +217,7 @@ class CombatApp(Calibration):
             button.configure(text=f"{label} ✓" if saved[key] else label,
                              style="Saved.Skill.TButton" if saved[key] else "Skill.TButton")
         self.seal_menu_button.configure(text="圣印校验 ✓" if setup_complete(self.seal_setup) else "圣印校验")
-        for index, (key, caption) in enumerate((("current", "当前圣印进度条"), ("storage", "左侧储存增益区"),
+        for index, (key, caption) in enumerate((("current", "当前圣印图标"), ("storage", "左侧储存增益区"),
                                                 ("righteous_icon", "正义储存三层图标"))):
             saved = key in self.seal_setup or (key == "righteous_icon" and righteous_reference_available(self.seal_setup))
             self.seal_menu.entryconfigure(index, label=f"{caption} ✓" if saved else caption)

@@ -27,10 +27,10 @@
   },
   "seal_setup": {
     "current": {
-      "left": 1707,
-      "top": 1151,
-      "width": 31,
-      "height": 31,
+      "left": 1911,
+      "top": 1073,
+      "width": 79,
+      "height": 83,
       "client_width": 2560,
       "client_height": 1351
     },
@@ -41,7 +41,8 @@
       "height": 50,
       "client_width": 2560,
       "client_height": 1351
-    }
+    },
+    "current_format": "badge"
   },
   "sanction_region": {
     "left": 732,

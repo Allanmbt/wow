@@ -1,4 +1,4 @@
-"""读取插件圣印条、左侧储存图标，并确认每次切印。"""
+"""读取当前圣印和左侧储存图标，并确认每次切印。"""
 
 import base64
 import binascii
@@ -10,12 +10,15 @@ from mss.exception import ScreenShotError
 
 from ..geometry import region_on_screen
 from ..paths import asset_path
+from .seal_badge import SealBadgeDetector
 from .target import load_frame
 
 
 COMMAND = "command"
 RIGHTEOUS = "righteous"
 NO_SEAL = "none"
+CURRENT_BADGE = "badge"
+CURRENT_BAR = "bar"
 SEAL_NAMES = {COMMAND: "命令", RIGHTEOUS: "正义", NO_SEAL: "无"}
 SWITCH_MIN_HP = 20
 SAMPLE_INTERVAL = 0.15
@@ -44,6 +47,8 @@ def load_seal_setup(data):
     if not isinstance(data, dict):
         return {}
     setup = {key: region for key in ("current", "storage") if (region := load_frame(data.get(key)))}
+    if "current" in setup and data.get("current_format") in (CURRENT_BADGE, CURRENT_BAR):
+        setup["current_format"] = data["current_format"]
     if _photo(data.get("righteous_icon")) is not None:
         setup["righteous_icon"] = data["righteous_icon"]
         size = data.get("storage_size")
@@ -94,6 +99,8 @@ class SealDetector:
         if atlas is None or atlas.shape[:2] != (ICON_SIZE, ICON_SIZE * 4):
             raise ValueError("圣印图标模板无效")
         command, righteous, command_storage, dark_storage = np.hsplit(atlas, 4)
+        self.current_format = setup.get("current_format", CURRENT_BAR)
+        self.badges = None
         built_in = None
         if RIGHTEOUS_STACK.is_file():
             built_in = cv2.imdecode(np.frombuffer(RIGHTEOUS_STACK.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
@@ -156,7 +163,39 @@ class SealDetector:
             return (COMMAND, command[1], best) if command[0] > righteous[0] else (RIGHTEOUS, righteous[1], best)
         return None, None, best
 
+    def _badge_match(self, image):
+        if self.badges is None:
+            self.badges = SealBadgeDetector()
+        return self.badges.match(image)
+
+    def locate_current(self, image):
+        badge = self._badge_match(image)
+        if badge is not None:
+            index, (x, y, width, height) = badge
+            if index is None:
+                return None
+            horizontal_margin = round(width * 0.30)
+            left, top = max(0, x-horizontal_margin), max(0, y-3)
+            right = min(image.shape[1], x + width + horizontal_margin)
+            bottom = min(image.shape[0], y + height + round(height * 0.46))
+            return CURRENT_BADGE, (left, top, right-left, bottom-top)
+
+        _, box, _ = self.current_match(image)
+        if box is None:
+            return None
+        x, y, size = box
+        left, top = max(0, x-3), max(0, y-3)
+        right = min(image.shape[1], x + size + 3)
+        bottom = min(image.shape[0], y + size + 3)
+        return CURRENT_BAR, (left, top, right-left, bottom-top)
+
     def read_current(self, image, empty_slot):
+        if self.current_format == CURRENT_BADGE:
+            match = self._badge_match(image)
+            if match is not None:
+                index, _ = match
+                return (COMMAND, RIGHTEOUS)[index] if index is not None else None
+            return NO_SEAL if empty_slot else None
         seal, _, score = self.current_match(image)
         if seal is None and empty_slot and score < 0.80:
             return NO_SEAL
