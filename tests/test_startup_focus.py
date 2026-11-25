@@ -40,6 +40,8 @@ class StartupTests(unittest.TestCase):
         app.status, app.log, app.worker = Mock(), Mock(), Mock()
         app.bound_window = app.loot_monitor = app.mining_monitor = None
         app.cursor_loot, app.cursor_mining = Mock(), Mock()
+        app.protection = Mock()
+        app.protection.get.return_value = False
         app.loot_status, app.mining_status = Mock(), Mock()
         app.monitor_status, app.detail = Mock(), Mock()
         app.native = SimpleNamespace(foreground=lambda: foreground(app.root.now),

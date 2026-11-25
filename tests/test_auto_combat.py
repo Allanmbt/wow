@@ -63,7 +63,8 @@ class HotkeyTests(unittest.TestCase):
                               CallNextHookEx=Mock(return_value=0), PeekMessageW=Mock(), GetMessageW=run_callbacks,
                               GetAsyncKeyState=Mock(side_effect=lambda key: 0x8000 if key in modifiers else 0))
         kernel = SimpleNamespace(GetCurrentThreadId=lambda: 1, GetModuleHandleW=Mock(return_value=3))
-        with patch("wow_assistant.device.hotkeys.ctypes.WinDLL", side_effect=[api, kernel]):
+        with (patch("wow_assistant.device.hotkeys.ctypes.WinDLL", side_effect=[api, kernel]),
+              patch("wow_assistant.device.hotkeys.RawInput", side_effect=OSError("未能注册原始输入"))):
             hotkeys.run()
 
         self.assertEqual([call.args[0] for call in install.call_args_list], [13, 14])

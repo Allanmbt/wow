@@ -70,6 +70,10 @@ class PoisonTests(unittest.TestCase):
         app.poison_region = app.poison_icon_size = None
         app.target_frame = None
         app.seal_setup, app.dance_enabled = {}, threading.Event()
+        app.protection, app.protection_enabled = Mock(), threading.Event()
+        app.protection.get.return_value = False
+        app.hammer, app.hammer_enabled = Mock(), threading.Event()
+        app.hammer.get.return_value = False
         app.seal_dance, app.seal_menu_button, app.seal_menu = Mock(), Mock(), Mock()
         app.seal_dance.get.return_value = False
         app.region = dict(left=10, top=10, width=40, height=40)

@@ -13,6 +13,7 @@ GET_CONFIG = 0x08
 RELEASE_REPORT = bytes(8)
 MOUSE_RELEASE = bytes((1, 0, 0, 0, 0))
 MOUSE_BUTTONS = {"left": 1, "right": 2, "middle": 4}
+FUNCTION_KEYS = {f"F{number}": (0x6F + number, 0x39 + number) for number in range(1, 13)}
 DEFAULT_BAUD = 9600
 CH343_USB_ID = (0x1A86, 0x55D3)
 
@@ -176,12 +177,16 @@ class CH9329Keyboard:
             raise OSError(f"{self.name} · {operation}失败。芯片状态 {status.hex(' ').upper() or '无数据'}")
 
     def tap(self, key, cancel, hold_seconds):
-        if key == "1":
-            usage = 0x1E
+        if key == "0":
+            usage = 0x27
+        elif len(key) == 1 and "1" <= key <= "9":
+            usage = 0x1E + int(key) - 1
+        elif key.upper() in FUNCTION_KEYS:
+            usage = FUNCTION_KEYS[key.upper()][1]
         elif len(key) == 1 and key.isascii() and "A" <= key.upper() <= "Z":
             usage = ord(key.upper()) - ord("A") + 4
         else:
-            raise ValueError("CH9329 输出目前支持 A–Z 和数字 1")
+            raise ValueError("CH9329 输出目前支持 A–Z、主键区数字 0–9 和 F1–F12")
         report = bytes((0, 0, usage, 0, 0, 0, 0, 0))
         return self._press_and_release(KEYBOARD_REPORT, report, RELEASE_REPORT, key.upper(), cancel, hold_seconds)
 

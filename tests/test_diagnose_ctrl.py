@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 import cv2
 import numpy as np
 
-from wow_assistant.combat.skills import ATTACK_SKILLS
+from wow_assistant.combat.skills import ATTACK_SKILLS, HAMMER_UNAVAILABLE, infer_hammer_region
 from wow_assistant.tools.diagnose_ctrl import (CONFIG, TEMPLATE, DiagnosticHotkeys,
                            DiagnosticInput, print_summary, probe_icons)
 
@@ -36,11 +36,16 @@ class DiagnosticTests(unittest.TestCase):
 
     def test_icon_probe_saves_evidence_without_sending_input(self):
         config = json.loads(CONFIG.read_text(encoding="utf-8"))
+        config["hammer"] = True
         images = {}
         for key, path in [("seal", TEMPLATE), *((key, path) for key, (_, _, path) in ATTACK_SKILLS.items())]:
             if not config.get(key + "_region") or not path.exists():
                 continue
             images[tuple(sorted(config[key+"_region"].items()))] = cv2.imdecode(np.frombuffer(path.read_bytes(), np.uint8), 1)
+        hammer_region = config.get("hammer_region") or infer_hammer_region(config.get("seal_region"), config.get("judgment_region"))
+        if hammer_region is None:
+            hammer_region = config["hammer_region"] = dict(left=20, top=20, width=58, height=53)
+        images[tuple(sorted(hammer_region.items()))] = cv2.imdecode(np.frombuffer(HAMMER_UNAVAILABLE.read_bytes(), np.uint8), 1)
         class Capture:
             monitors = [{}, dict(left=0, top=0, width=8000, height=4000)]
             def __enter__(self): return self
@@ -53,10 +58,17 @@ class DiagnosticTests(unittest.TestCase):
             send=Mock(side_effect=AssertionError("不能发送输入")), right_click=Mock())
         snapshot = dict(foreground=dict(hwnd=123, title="Game", pid=456, process="wow.exe", own=False),
                         mouse_window=dict(hwnd=123, title="Game"))
-        with tempfile.TemporaryDirectory() as directory, patch("mss.MSS", Capture):
-            result = probe_icons(native, snapshot, Path(directory), 1, "sample", lambda line: None)
+        messages = []
+        with (tempfile.TemporaryDirectory() as directory, patch("mss.MSS", Capture),
+              patch("wow_assistant.tools.diagnose_ctrl.load_config", return_value=config)):
+            result = probe_icons(native, snapshot, Path(directory), 1, "sample", messages.append)
             self.assertIs(result["q_ready"], True)
             self.assertEqual(len(list(Path(directory).glob("*.png"))), len(images))
+            config["hammer"] = False
+            disabled = probe_icons(native, snapshot, Path(directory), 2, "sample", messages.append)
+            self.assertIn("hammer", result["inside"])
+            self.assertNotIn("hammer", disabled["inside"])
+        self.assertTrue(any("愤怒之锤] 灰暗/不可用" in message for message in messages))
         native.send.assert_not_called()
         native.right_click.assert_not_called()
 

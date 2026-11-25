@@ -8,6 +8,7 @@ from ..paths import asset_path
 
 BADGE_SIZE = 55
 BADGE_ASSET = asset_path("seal_current_badges.png")
+WISDOM_ASSET = asset_path("seal_wisdom_badge.png")
 
 
 def _gold(image):
@@ -43,8 +44,14 @@ class SealBadgeDetector:
         timer = (abs(ys - 27) <= 15) & (abs(xs - 27) <= 17)
         self.art_mask = interior & ~timer
         samples = np.hsplit(atlas, 2)
-        self.art_reference = np.stack([self._art(image[:55, 16:71]) for image in samples])
-        self.name_reference = np.stack([_name_signature(image[57:80]) for image in samples])
+        self.art_reference = [self._art(image[:55, 16:71]) for image in samples]
+        self.name_reference = [_name_signature(image[57:80]) for image in samples]
+        wisdom = cv2.imdecode(np.frombuffer(WISDOM_ASSET.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
+        if wisdom is None or wisdom.shape[:2] != (85, 80):
+            raise ValueError("智慧圣印图标模板无效")
+        self.wisdom_icon = wisdom[6:61, 14:69]
+        self.art_reference = np.stack([*self.art_reference, self._art(self.wisdom_icon)])
+        self.name_reference = np.stack([*self.name_reference, _name_signature(wisdom[62:85])])
 
     def _art(self, image):
         gray = cv2.cvtColor(cv2.resize(image, (BADGE_SIZE, BADGE_SIZE)), cv2.COLOR_BGR2GRAY)
@@ -58,7 +65,7 @@ class SealBadgeDetector:
                     mask[:, :edge].any(axis=1).mean(), mask[:, -edge:].any(axis=1).mean())
         return min(coverage) >= 0.72
 
-    def match(self, image):
+    def match(self, image, *, wisdom=False):
         gold = _gold(image)
         _, _, boxes, _ = cv2.connectedComponentsWithStats(gold)
         result = None
@@ -70,11 +77,12 @@ class SealBadgeDetector:
             if not self._outlined(gold[y:y+height, x:x+width]):
                 continue
             box = x, y, width, height
-            art = self.art_reference @ self._art(image[y:y+height, x:x+width])
+            count = 3 if wisdom else 2
+            art = self.art_reference[:count] @ self._art(image[y:y+height, x:x+width])
             left = max(0, x - round(width * 0.30))
             right = x + width + round(width * 0.30)
             name = _name_signature(image[y+height+1:y+height+round(height*0.46), left:right])
-            text = self.name_reference @ name if name is not None else None
+            text = self.name_reference[:count] @ name if name is not None else None
             icon_choice = self._choose(art, 0.74, 0.12)
             label_choice = self._choose(text, 0.72, 0.14) if text is not None else None
             if icon_choice is not None and label_choice in (None, icon_choice):
@@ -86,5 +94,5 @@ class SealBadgeDetector:
 
     @staticmethod
     def _choose(scores, minimum, margin):
-        index = int(np.argmax(scores))
-        return index if scores[index] >= minimum and scores[index] - scores[1-index] >= margin else None
+        runner_up, index = np.argsort(scores)[-2:]
+        return int(index) if scores[index] >= minimum and scores[index] - scores[runner_up] >= margin else None

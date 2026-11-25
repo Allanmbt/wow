@@ -16,10 +16,11 @@ from .target import load_frame
 
 COMMAND = "command"
 RIGHTEOUS = "righteous"
+WISDOM = "wisdom"
 NO_SEAL = "none"
 CURRENT_BADGE = "badge"
 CURRENT_BAR = "bar"
-SEAL_NAMES = {COMMAND: "命令", RIGHTEOUS: "正义", NO_SEAL: "无"}
+SEAL_NAMES = {COMMAND: "命令", RIGHTEOUS: "正义", WISDOM: "智慧", NO_SEAL: "无"}
 SWITCH_MIN_HP = 20
 SAMPLE_INTERVAL = 0.15
 OUT_OF_COMBAT_INTERVAL = 0.30
@@ -101,6 +102,7 @@ class SealDetector:
         command, righteous, command_storage, dark_storage = np.hsplit(atlas, 4)
         self.current_format = setup.get("current_format", CURRENT_BAR)
         self.badges = None
+        self.wisdom_current = None
         built_in = None
         if RIGHTEOUS_STACK.is_file():
             built_in = cv2.imdecode(np.frombuffer(RIGHTEOUS_STACK.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
@@ -155,21 +157,29 @@ class SealDetector:
                 return True
         return False
 
-    def current_match(self, image):
+    def current_match(self, image, *, wisdom=False):
         gray = cv2.cvtColor(image[:, :105], cv2.COLOR_BGR2GRAY)
-        command, righteous = (self._find(gray, templates) for templates in self.current)
-        best, runner_up = sorted((command[0], righteous[0]), reverse=True)
+        candidates = [(seal, score, box) for seal, templates in zip((COMMAND, RIGHTEOUS), self.current)
+                      for score, box in (self._find(gray, templates),)]
+        if wisdom:
+            if self.wisdom_current is None:
+                if self.badges is None:
+                    self.badges = SealBadgeDetector()
+                self.wisdom_current = self._templates([self.badges.wisdom_icon[3:-3, 3:-3]], range(16, 57))
+            score, box = self._find(gray, self.wisdom_current)
+            candidates.append((WISDOM, score, box))
+        (seal, best, box), (_, runner_up, _), *_ = sorted(candidates, key=lambda item: item[1], reverse=True)
         if best >= 0.80 and best - runner_up >= 0.08:
-            return (COMMAND, command[1], best) if command[0] > righteous[0] else (RIGHTEOUS, righteous[1], best)
+            return seal, box, best
         return None, None, best
 
-    def _badge_match(self, image):
+    def _badge_match(self, image, *, wisdom=False):
         if self.badges is None:
             self.badges = SealBadgeDetector()
-        return self.badges.match(image)
+        return self.badges.match(image, wisdom=wisdom)
 
     def locate_current(self, image):
-        badge = self._badge_match(image)
+        badge = self._badge_match(image, wisdom=True)
         if badge is not None:
             index, (x, y, width, height) = badge
             if index is None:
@@ -180,7 +190,7 @@ class SealDetector:
             bottom = min(image.shape[0], y + height + round(height * 0.46))
             return CURRENT_BADGE, (left, top, right-left, bottom-top)
 
-        _, box, _ = self.current_match(image)
+        _, box, _ = self.current_match(image, wisdom=True)
         if box is None:
             return None
         x, y, size = box
@@ -189,14 +199,14 @@ class SealDetector:
         bottom = min(image.shape[0], y + size + 3)
         return CURRENT_BAR, (left, top, right-left, bottom-top)
 
-    def read_current(self, image, empty_slot):
+    def read_current(self, image, empty_slot, *, wisdom=False):
         if self.current_format == CURRENT_BADGE:
-            match = self._badge_match(image)
+            match = self._badge_match(image, wisdom=wisdom)
             if match is not None:
                 index, _ = match
-                return (COMMAND, RIGHTEOUS)[index] if index is not None else None
+                return (COMMAND, RIGHTEOUS, WISDOM)[index] if index is not None else None
             return NO_SEAL if empty_slot else None
-        seal, _, score = self.current_match(image)
+        seal, _, score = self.current_match(image, wisdom=wisdom)
         if seal is None and empty_slot and score < 0.80:
             return NO_SEAL
         return seal
@@ -250,6 +260,7 @@ class SealMonitor:
         self.detector = SealDetector(setup)
         self.next_sample = 0.0
         self.reading = SealReading()
+        self.recognize_wisdom = False
 
     def _grab(self, key, client):
         profile = self.setup.get(key)
@@ -277,12 +288,19 @@ class SealMonitor:
             client = self.client_bounds()
             active_image = self._grab("current", client)
             storage_image = self._grab("storage", client) if in_combat or check_storage else None
-            active = self.detector.read_current(active_image, empty_slot) if active_image is not None else None
+            active = self.detector.read_current(active_image, empty_slot, wisdom=self.recognize_wisdom) if active_image is not None else None
             stored, three, known = self.detector.read_storage(storage_image) if storage_image is not None else (frozenset(), frozenset(), False)
             self.reading = SealReading(active, stored, three, known)
         except (OSError, ScreenShotError, cv2.error):
             self.reading = SealReading()
         return self.reading
+
+    def read_active(self):
+        try:
+            image = self._grab("current", self.client_bounds())
+            return self.detector.read_current(image, False, wisdom=True) if image is not None else None
+        except (OSError, ValueError, ScreenShotError, cv2.error):
+            return None
 
 
 @dataclass(frozen=True)
@@ -302,6 +320,7 @@ class SealDancePolicy:
         self.started_at = self.sent_at = 0.0
         self.next_action_at = 0.0
         self.used_stacks = set()
+        self.restore_wisdom = False
         self.reset_observations()
 
     def reset_observations(self):
@@ -321,6 +340,8 @@ class SealDancePolicy:
             self.last_active, self.active_frames = reading.active, 1
         if self.stable_frames >= 2 and reading.storage_known:
             self.used_stacks.intersection_update(reading.three)
+        if self.active_frames >= 2 and reading.active in (COMMAND, RIGHTEOUS):
+            self.restore_wisdom = False
         if self.pending is None:
             return
         confirmed = self.active_frames >= 2 and reading.active == self.pending.destination
@@ -336,10 +357,11 @@ class SealDancePolicy:
             self.pending = None
 
     @staticmethod
-    def eligible(reading, target):
+    def eligible(reading, target, *, restore_wisdom=False):
         if not target.alive or reading.active is None:
             return None
-        if reading.active == NO_SEAL or (reading.active == RIGHTEOUS and target.engaged is False):
+        if (reading.active == NO_SEAL or (restore_wisdom and reading.active == WISDOM)
+                or (reading.active == RIGHTEOUS and target.engaged is False)):
             return SealAction(COMMAND)
         if (target.engaged is True and target.at_least(SWITCH_MIN_HP) and reading.storage_known
                 and reading.active in reading.three):
@@ -349,7 +371,7 @@ class SealDancePolicy:
     def decide(self, reading, target, now):
         if self.stable_frames < 2:
             return None
-        action = self.eligible(reading, target)
+        action = self.eligible(reading, target, restore_wisdom=self.restore_wisdom)
         if action is None or action.consumed in self.used_stacks:
             return None
         if self.pending is not None:
@@ -362,8 +384,8 @@ class SealDancePolicy:
     def reserves_attack(self, reading, target):
         if self.pending is not None:
             return (reading.active == self.pending.destination
-                    or self.eligible(reading, target) == self.pending)
-        action = self.eligible(reading, target)
+                    or self.eligible(reading, target, restore_wisdom=self.restore_wisdom) == self.pending)
+        action = self.eligible(reading, target, restore_wisdom=self.restore_wisdom)
         return action is not None and action.consumed not in self.used_stacks
 
     def sent(self, action, now):

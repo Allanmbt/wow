@@ -10,7 +10,8 @@ import queue
 import sys
 import time
 
-from ..combat.skills import ATTACK_SKILLS, TEMPLATE, classify_attack_icon, classify_icon, validate_skill_regions
+from ..combat.skills import (ATTACK_SKILLS, OPTIONAL_ATTACK_SKILLS, TEMPLATE, HammerIcon,
+                             classify_attack_icon, classify_icon, infer_hammer_region, validate_skill_regions)
 from ..device.hotkeys import Hotkeys
 from ..device.windows import WindowsInput
 from ..geometry import enable_dpi_awareness, region_on_screen
@@ -83,7 +84,8 @@ def window_line(window):
 
 def load_config():
     data = json.loads(CONFIG.read_text(encoding="utf-8"))
-    validate_skill_regions({key: data.get(key+"_region") for key in ("seal", *ATTACK_SKILLS)})
+    validate_skill_regions({key: data.get(key+"_region") for key in ("seal", *ATTACK_SKILLS)},
+                           include_hammer=(data.get("hammer") is True))
     return data
 
 
@@ -100,9 +102,14 @@ def probe_icons(native, snapshot, output, number, label, log):
     log("    原程序前台检查=" + ("通过；请核对上述标题是否确实是游戏" if allowed else "未通过：空窗口或工具自身"))
     data = load_config()
     log("[4 配置] 文件可读、技能位置互不冲突")
+    regions = {key: data.get(key+"_region") for key in ("seal", *ATTACK_SKILLS)}
+    if data.get("hammer") is not True:
+        regions["hammer"] = None
+    elif regions["hammer"] is None:
+        regions["hammer"] = infer_hammer_region(regions["seal"], regions["judgment"])
     keys = [("seal", "圣印", TEMPLATE),
             *((key, name, path) for key, (name, _, path) in ATTACK_SKILLS.items()
-              if key != "sanction" or data.get("sanction_region"))]
+              if key not in OPTIONAL_ATTACK_SKILLS or regions[key])]
     modifiers = [name for vk, name in ((0x11, "Ctrl"), (0x10, "Shift"), (0x12, "Alt"), (0x5B, "左Win"), (0x5C, "右Win"))
                  if native.api.GetAsyncKeyState(vk) & 0x8000]
     log("[5 发键条件] 按住的修饰键=" + ("、".join(modifiers) if modifiers else "无"))
@@ -116,20 +123,27 @@ def probe_icons(native, snapshot, output, number, label, log):
     results = dict(foreground=fg, q_ready=None, modifiers=modifiers, inside={})
     with mss.MSS() as capture:
         for key, name, path in keys:
-            region = data.get(key+"_region")
+            region = regions[key]
             if not region_on_screen(region, capture.monitors[1:]):
                 log(f"[6 图标/{name}] 失败：坐标未配置或超出屏幕 {region}")
                 continue
-            reference = cv2.imdecode(np.frombuffer(path.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
-            if reference is None:
+            reference = None
+            if key != "hammer" or (data.get("hammer_region") and path.exists()):
+                reference = cv2.imdecode(np.frombuffer(path.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
+            if reference is None and key != "hammer":
                 raise ValueError(f"无法读取模板 {path.name}")
             image = cv2.cvtColor(np.array(capture.grab(region)), cv2.COLOR_BGRA2BGR)
-            state, score = (classify_icon(image, reference, float(data.get("ready_threshold", .90)))
-                            if key == "seal" else classify_attack_icon(image, reference))
+            if key == "hammer":
+                state, score = HammerIcon(reference).classify(image)
+            elif key == "seal":
+                state, score = classify_icon(image, reference, float(data.get("ready_threshold", .90)))
+            else:
+                state, score = classify_attack_icon(image, reference)
             inside = (bounds is not None and region["left"] >= bounds["left"] and region["top"] >= bounds["top"]
                       and region["left"]+region["width"] <= bounds["left"]+bounds["width"]
                       and region["top"]+region["height"] <= bounds["top"]+bounds["height"])
-            log(f"[6 图标/{name}] {states[state]} | 相似度={score:.1%} | 位于前台客户区={inside}")
+            status = "灰暗/不可用" if key == "hammer" and state is False else states[state]
+            log(f"[6 图标/{name}] {status} | 相似度={score:.1%} | 位于前台客户区={inside}")
             results["inside"][key] = inside
             ok, encoded = cv2.imencode(".png", image)
             if ok:
@@ -137,7 +151,7 @@ def probe_icons(native, snapshot, output, number, label, log):
             if key == "seal":
                 results["q_ready"] = state
                 log("    Q 判断=" + ("本帧符合；还需连续稳定约0.6秒" if state is True else "本帧不符合，不会自动Q"))
-    log("[7 结果] 本测试未发送任何 Q/E/V 或右键；以上只检查识别与启动条件。")
+    log("[7 结果] 本测试未发送按键或右键；以上只检查识别与启动条件。")
     return results
 
 

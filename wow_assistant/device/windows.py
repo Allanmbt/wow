@@ -6,7 +6,7 @@ import json
 import os
 import threading
 
-from .ch9329 import CH9329Keyboard, DEFAULT_BAUD
+from .ch9329 import CH9329Keyboard, DEFAULT_BAUD, FUNCTION_KEYS
 
 from ..paths import config_path
 
@@ -271,7 +271,10 @@ class WindowsInput:
 
     def send(self, key, hwnd, cancel, *, virtual_key=False, hold_seconds=0.035, recheck=None):
         with self.input_lock:
-            vk = ord(key)
+            function_key = FUNCTION_KEYS.get(key.upper())
+            if function_key is not None and not isinstance(self._hid_keyboard, CH9329Keyboard):
+                return False
+            vk = function_key[0] if function_key else ord(key)
             if not self._can_send(vk, hwnd, cancel):
                 return False
             if self._hid_keyboard is not None:

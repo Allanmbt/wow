@@ -36,6 +36,14 @@ class TargetReading:
         # 条宽存在取整和描边误差，临界值等可信的数字证据。
         return self.percent is not None and self.percent >= percent + 2
 
+    def below(self, percent):
+        if not self.alive:
+            return False
+        if self.health:
+            current, maximum = self.health
+            return 0 < current * 100 < maximum * percent
+        return self.percent is not None and 0 < self.percent < percent
+
     def describe(self):
         if self.alive:
             prefix = {True: "战斗中", False: "已选中"}.get(self.engaged, "存活目标")

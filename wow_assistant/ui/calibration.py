@@ -1,6 +1,6 @@
 """技能、目标框和圣印舞的校验入口。"""
 
-from ..combat.skills import ATTACK_SKILLS, TEMPLATE, icon_image, validate_skill_regions
+from ..combat.skills import ATTACK_SKILLS, TEMPLATE, HammerIcon, icon_image, validate_skill_regions
 from ..vision.poison import PoisonDetector
 from ..vision.seal import SealDetector, setup_complete
 from ..vision.target import TargetFrameDetector, load_frame, saved_frame
@@ -13,14 +13,15 @@ class Calibration:
             return
         self.stop()
         self.selecting = True
-        self.log("框选一个完整就绪图标；圣印需未开启，攻击技能需无倒计时")
+        self.log("框选愤怒之锤的完整图标，灰暗或点亮均可" if key == "hammer"
+                 else "框选一个完整就绪图标 · 圣印需未开启 · 攻击技能需无倒计时")
         self.root.withdraw()
         def selected(region, frame):
             try:
                 import cv2
                 regions = dict(seal=self.region, **self.e_regions)
                 regions[key] = region
-                validate_skill_regions(regions)
+                validate_skill_regions(regions, include_hammer=(key == "hammer"))
                 if not (16 <= region["width"] <= 200 and 16 <= region["height"] <= 200
                         and 0.65 <= region["width"] / region["height"] <= 1.5 and frame.std() >= 8):
                     raise ValueError("请仅框选一个完整技能图标（16～200 像素）")
@@ -28,6 +29,15 @@ class Calibration:
                     center = cv2.cvtColor(icon_image(frame)[12:36, 12:36], cv2.COLOR_BGR2GRAY)
                     if center.std() < 3:
                         raise ValueError("图标中心缺少纹理，请重新框选")
+                if key == "hammer":
+                    state, _ = HammerIcon().classify(frame)
+                    if state is None:
+                        raise ValueError("未确认愤怒之锤图标，请在灰暗或点亮且无倒计时时框选")
+                    if state is False:
+                        self.e_regions[key] = region
+                        self.persist()
+                        self.update_labels()
+                        return
                 path = TEMPLATE if key == "seal" else ATTACK_SKILLS[key][2]
                 ok, encoded = cv2.imencode(".png", frame)
                 if not ok:
@@ -136,7 +146,7 @@ class Calibration:
                     if key == "current":
                         match = detector.locate_current(image)
                         if match is None:
-                            raise ValueError("开启命令或正义圣印，框住完整金边图标和下方名称")
+                            raise ValueError("开启命令、正义或智慧圣印，框住完整金边图标和下方名称")
                         setup["current_format"], (left, top, width, height) = match
                         region = dict(left=region["left"] + left, top=region["top"] + top,
                                       width=width, height=height)

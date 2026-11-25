@@ -1,4 +1,4 @@
-"""自动补圣印和 E/R 调度策略。"""
+"""自动补圣印和 E/R/F 调度策略。"""
 
 from dataclasses import dataclass
 from random import randint, uniform
@@ -130,12 +130,22 @@ class AttackSkill:
 
 
 class AttackPolicy:
-    """制裁优先，随后按审判和神圣打击的共享 E 规则发键。"""
+    """制裁优先，斩杀阶段愤怒之锤优先于共享 E。"""
 
     def __init__(self):
-        self.skills = {key: AttackSkill(name, cd) for key, (name, cd, _) in ATTACK_SKILLS.items()}
+        self.skills = {key: AttackSkill(name, cd) for key, (name, cd, _) in ATTACK_SKILLS.items()
+                       if key != "hammer"}
         self.last_attack = -float("inf")
         self.clear_burst()
+
+    def set_hammer_enabled(self, enabled):
+        if enabled and "hammer" not in self.skills:
+            name, cooldown, _ = ATTACK_SKILLS["hammer"]
+            self.skills["hammer"] = AttackSkill(name, cooldown)
+        elif not enabled:
+            self.skills.pop("hammer", None)
+            if "hammer" in self.burst_targets:
+                self.clear_burst()
 
     def clear_burst(self):
         self.burst_left = 0
@@ -151,14 +161,16 @@ class AttackPolicy:
             if not self.burst_targets:
                 self.clear_burst()
 
-    def candidates(self, now):
+    def candidates(self, now, *, hammer_allowed=False):
         if now - self.last_attack < ATTACK_MIN_GAP:
             return ()
         if self.skills["sanction"].due(now):
             return ("sanction",)
+        if hammer_allowed and "hammer" in self.skills and self.skills["hammer"].due(now):
+            return ("hammer",)
         if self.burst_left and now <= self.burst_until:
             followup = tuple(key for key in self.burst_targets
-                             if self.skills[key].ready_since is not None
+                             if (key != "hammer" or hammer_allowed) and self.skills[key].ready_since is not None
                              and now >= self.skills[key].guard_until)
             if followup:
                 return followup if now >= self.burst_next else ()

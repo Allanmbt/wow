@@ -280,6 +280,8 @@ class IsolationTests(unittest.TestCase):
         app.worker = Mock()
         app.root, app.loot_status, app.mining_status = Mock(), Mock(), Mock()
         app.combat_mode, app.cursor_loot, app.cursor_mining = Mock(), Mock(), Mock()
+        app.protection, app.worker_combat_enabled = Mock(), True
+        app.protection.get.return_value = False
         app.cursor_loot.get.return_value = True
         app.cursor_mining.get.return_value = True
         app.loot_monitor, app.mining_monitor = None, Mock()

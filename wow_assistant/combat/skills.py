@@ -9,12 +9,18 @@ E_SKILLS = {
     "judgment": ("审判", 8.0, asset_path("judgment_ready.png")),
 }
 ATTACK_SKILLS = {"sanction": ("制裁", 0.0, asset_path("sanction_ready.png")), **E_SKILLS}
+ATTACK_SKILLS["hammer"] = ("愤怒之锤", 0.0, asset_path("hammer_ready.png"))
+OPTIONAL_ATTACK_SKILLS = frozenset(("sanction", "hammer"))
 SANCTION_KEY = "R"
+HAMMER_KEY = "F"
+HAMMER_THRESHOLD = 20
+HAMMER_UNAVAILABLE = asset_path("hammer_unavailable.png")
 
 
-def validate_skill_regions(regions):
-    names = dict(seal="圣印（第2格）", strike="神圣打击（第1格）", judgment="审判（第4格）", sanction="制裁")
-    items = [(key, rect) for key, rect in regions.items() if rect]
+def validate_skill_regions(regions, *, include_hammer=True):
+    names = dict(seal="圣印（第2格）", strike="神圣打击（第1格）", judgment="审判（第4格）",
+                 sanction="制裁", hammer="愤怒之锤")
+    items = [(key, rect) for key, rect in regions.items() if rect and (include_hammer or key != "hammer")]
     for i, (key, a) in enumerate(items):
         for other, b in items[i+1:]:
             width = max(0, min(a["left"]+a["width"], b["left"]+b["width"])-max(a["left"], b["left"]))
@@ -81,6 +87,56 @@ def classify_attack_icon(frame, reference):
     gray = hsv[:, :, 1].mean() < ready_hsv[:, :, 1].mean() * 0.65
     dark = hsv[:, :, 2].mean() < ready_hsv[:, :, 2].mean() * 1.15
     return (False if gray and dark else None), score
+
+
+def infer_hammer_region(seal, judgment):
+    """按截图布局推断圣印和审判之间的单格坐标。"""
+    if not seal or not judgment:
+        return None
+    left = seal["left"] + seal["width"]
+    width = judgment["left"] - left
+    height = round((seal["height"] + judgment["height"]) / 2)
+    if not (16 <= height <= 200 and .68*height <= width <= 1.40*height
+            and abs(seal["top"] - judgment["top"]) <= .25*height):
+        return None
+    return dict(left=left, top=round((seal["top"]+judgment["top"]) / 2), width=width, height=height)
+
+
+class HammerIcon:
+    def __init__(self, ready=None):
+        import cv2
+        import numpy as np
+
+        dark = cv2.imdecode(np.frombuffer(HAMMER_UNAVAILABLE.read_bytes(), np.uint8), cv2.IMREAD_COLOR)
+        self.dark = cv2.cvtColor(icon_image(dark), cv2.COLOR_BGR2GRAY)[6:42, 6:42]
+        self.detail = self.dark >= 22
+        self.ready = ready
+
+    def classify(self, frame):
+        import cv2
+        import numpy as np
+
+        normalized = icon_image(frame)
+        gray = cv2.cvtColor(normalized, cv2.COLOR_BGR2GRAY)
+        _, score, _, (x, y) = cv2.minMaxLoc(cv2.matchTemplate(gray, self.dark, cv2.TM_CCOEFF_NORMED))
+        size = self.dark.shape[0]
+        aligned = gray[y:y+size, x:x+size]
+        delta = (aligned.astype(np.float32)-self.dark)[self.detail]
+        if score >= .85 and float(delta.mean()) <= 10:
+            return False, score
+        if self.ready is not None:
+            return classify_attack_icon(frame, self.ready)
+        if score < .88:
+            return None, score
+        # 就绪时整体变亮，倒计时数字会改变图标中心纹理。
+        core = slice(5, 31)
+        core_score = float(cv2.matchTemplate(aligned[core, core], self.dark[core, core], cv2.TM_CCOEFF_NORMED)[0, 0])
+        color = normalized[y:y+size, x:x+size].astype(np.int16)
+        blue, green, red = cv2.split(color)
+        cyan = ((blue - red >= 15) & (green - red >= 12)).mean()
+        if core_score >= .92 and delta.mean() >= 14 and (delta >= 9).mean() >= .62 and cyan >= .035:
+            return True, score
+        return None, score
 
 
 def _skill_capture_plan(regions, monitors):
